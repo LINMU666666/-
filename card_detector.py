@@ -50,8 +50,15 @@ class CardDetector:
         self.current_fps = 0
         
     def reset_frame_stats(self):
-        """Reset per-frame statistics while maintaining cumulative data."""
-        # Note: We keep cumulative card_counts but could reset if needed
+        """
+        Reset per-frame statistics while maintaining cumulative data.
+        
+        This method is called after each statistics update interval.
+        Currently maintains all cumulative statistics (card_counts, total_cards_detected, etc.)
+        Can be extended in the future to reset per-interval metrics if needed.
+        """
+        # Currently, we maintain all cumulative statistics across the session
+        # This method is a placeholder for future per-interval stat tracking
         pass
     
     def detect_cards_in_frame(self, frame):

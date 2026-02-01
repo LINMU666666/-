@@ -36,11 +36,21 @@ class TestCardDetector(unittest.TestCase):
         self.assertEqual(self.detector.total_cards_detected, 0)
     
     def test_reset_frame_stats(self):
-        """Test frame statistics reset."""
+        """Test frame statistics reset - verifies cumulative stats are preserved."""
+        # Set up cumulative statistics
         self.detector.total_frames_processed = 10
+        self.detector.total_cards_detected = 25
+        self.detector.card_counts['heart_or_diamond'] = 15
+        self.detector.card_counts['spade_or_club'] = 10
+        
+        # Reset frame stats
         self.detector.reset_frame_stats()
-        # Should maintain cumulative stats
+        
+        # Verify cumulative stats are maintained
         self.assertEqual(self.detector.total_frames_processed, 10)
+        self.assertEqual(self.detector.total_cards_detected, 25)
+        self.assertEqual(self.detector.card_counts['heart_or_diamond'], 15)
+        self.assertEqual(self.detector.card_counts['spade_or_club'], 10)
     
     def test_identify_card_type_red_card(self):
         """Test card type identification for red cards."""
