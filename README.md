@@ -1,4 +1,12 @@
-# Real-Time Card Detection System
+# Project Tools / 项目工具
+
+This repository contains multiple useful tools:
+1. **Real-Time Card Detection System** - Monitor card game interactions
+2. **Monthly Activity Report Generator** - Track git repository activities
+
+---
+
+## Real-Time Card Detection System
 
 A Python-based real-time card detection system for monitoring computer game interactions by tracking and analyzing card appearances on the screen.
 
@@ -131,3 +139,98 @@ MIT License
 ## Contributing
 
 Contributions are welcome! Feel free to submit issues and pull requests.
+
+---
+
+## Monthly Activity Report Generator / 月度活动报告生成器
+
+A tool to generate comprehensive activity reports from git repository history.
+一个从git仓库历史生成全面活动报告的工具。
+
+### Features / 特性
+
+- **Bilingual Support / 双语支持**: Chinese (中文) and English
+- **Multiple Formats / 多种格式**: Text and Markdown output
+- **Flexible Time Ranges / 灵活的时间范围**: Custom date ranges or recent days
+- **Detailed Statistics / 详细统计**:
+  - Total commits, additions, deletions / 总提交数、增加行数、删除行数
+  - File change tracking / 文件变更追踪
+  - Contributor statistics / 贡献者统计
+  - Top modified files / 修改最多的文件
+
+### Usage / 使用方法
+
+#### Basic Usage / 基础用法
+
+Generate a report for the last 30 days in Chinese:
+生成过去30天的中文报告:
+
+```bash
+python monthly_report.py
+```
+
+#### Advanced Usage / 高级用法
+
+```bash
+# English report for last 60 days
+# 生成过去60天的英文报告
+python monthly_report.py --language en --days 60
+
+# Markdown format output
+# Markdown格式输出
+python monthly_report.py --format markdown
+
+# Custom date range
+# 自定义日期范围
+python monthly_report.py --since 2026-01-01 --until 2026-02-01
+
+# Save to file
+# 保存到文件
+python monthly_report.py --output report.txt
+
+# All options combined
+# 组合所有选项
+python monthly_report.py --language en --format markdown --days 90 --output monthly_summary.md
+```
+
+#### Command-line Arguments / 命令行参数
+
+- `--since YYYY-MM-DD` - Start date / 开始日期
+- `--until YYYY-MM-DD` - End date / 结束日期
+- `--days N` - Number of days to look back (default: 30) / 回溯天数（默认：30）
+- `--format {text,markdown}` - Output format / 输出格式
+- `--language {zh,en}` - Report language / 报告语言
+- `--output FILE` - Save to file / 保存到文件
+- `--repo PATH` - Repository path / 仓库路径
+
+### Example Output / 输出示例
+
+```
+================================================================================
+                                     月度活动报告                                     
+================================================================================
+
+时间范围: 2026-01-05 → 2026-03-06
+报告生成时间: 2026-03-06 13:40:20
+
+--------------------------------------------------------------------------------
+概要统计
+--------------------------------------------------------------------------------
+  总提交次数: 2
+  总增加行数: 886
+  总删除行数: 0
+  修改文件数: 7
+  贡献者: 1
+
+--------------------------------------------------------------------------------
+贡献者:
+--------------------------------------------------------------------------------
+  copilot-swe-agent[bot]        :   2 总提交次数 (100.0%)
+
+--------------------------------------------------------------------------------
+修改最多的文件 (前10)
+--------------------------------------------------------------------------------
+  card_detector.py
+    +284, -0 (284 行数变化, 1 修改次数)
+  ...
+```
