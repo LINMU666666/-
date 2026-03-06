@@ -36,6 +36,12 @@ class ActivityReportGenerator:
         self.authors = defaultdict(int)
         self.commit_messages = []
         
+        # Computed statistics
+        self.total_additions = 0
+        self.total_deletions = 0
+        self.report_start_date = None
+        self.report_end_date = None
+        
         # Translations
         self.translations = {
             'zh': {
@@ -175,6 +181,15 @@ class ActivityReportGenerator:
                         'deletions': del_count
                     })
     
+    def _compute_statistics(self):
+        """Compute total statistics from file changes."""
+        self.total_additions = sum(f['additions'] for f in self.file_changes.values())
+        self.total_deletions = sum(f['deletions'] for f in self.file_changes.values())
+    
+    def _format_date_range(self):
+        """Format date range for display."""
+        return f"{self.report_start_date.strftime('%Y-%m-%d')} → {self.report_end_date.strftime('%Y-%m-%d')}"
+    
     def generate_report(self, since_date=None, until_date=None, format='text'):
         """
         Generate activity report.
@@ -187,6 +202,16 @@ class ActivityReportGenerator:
         Returns:
             str: Formatted report
         """
+        # Set default dates
+        if since_date is None:
+            since_date = datetime.now() - timedelta(days=30)
+        if until_date is None:
+            until_date = datetime.now()
+        
+        # Store dates for reporting
+        self.report_start_date = since_date
+        self.report_end_date = until_date
+        
         # Reset statistics
         self.commits = []
         self.file_changes = defaultdict(lambda: {'additions': 0, 'deletions': 0, 'commits': 0})
@@ -200,19 +225,17 @@ class ActivityReportGenerator:
         
         self.parse_git_log(log_output)
         
+        # Compute statistics once
+        self._compute_statistics()
+        
         # Generate report based on format
         if format == 'markdown':
-            return self._generate_markdown_report(since_date, until_date)
+            return self._generate_markdown_report()
         else:
-            return self._generate_text_report(since_date, until_date)
+            return self._generate_text_report()
     
-    def _generate_text_report(self, since_date, until_date):
+    def _generate_text_report(self):
         """Generate plain text report."""
-        if since_date is None:
-            since_date = datetime.now() - timedelta(days=30)
-        if until_date is None:
-            until_date = datetime.now()
-        
         lines = []
         width = 80
         
@@ -223,7 +246,7 @@ class ActivityReportGenerator:
         lines.append("")
         
         # Time period
-        lines.append(f"{self.t('period')}: {since_date.strftime('%Y-%m-%d')} → {until_date.strftime('%Y-%m-%d')}")
+        lines.append(f"{self.t('period')}: {self._format_date_range()}")
         lines.append(f"{self.t('generated_at')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         lines.append("")
         
@@ -232,12 +255,9 @@ class ActivityReportGenerator:
         lines.append(self.t('summary'))
         lines.append("-" * width)
         
-        total_additions = sum(f['additions'] for f in self.file_changes.values())
-        total_deletions = sum(f['deletions'] for f in self.file_changes.values())
-        
         lines.append(f"  {self.t('total_commits')}: {len(self.commits)}")
-        lines.append(f"  {self.t('total_additions')}: {total_additions:,}")
-        lines.append(f"  {self.t('total_deletions')}: {total_deletions:,}")
+        lines.append(f"  {self.t('total_additions')}: {self.total_additions:,}")
+        lines.append(f"  {self.t('total_deletions')}: {self.total_deletions:,}")
         lines.append(f"  {self.t('files_changed')}: {len(self.file_changes)}")
         lines.append(f"  {self.t('authors')}: {len(self.authors)}")
         lines.append("")
@@ -291,19 +311,14 @@ class ActivityReportGenerator:
         
         return '\n'.join(lines)
     
-    def _generate_markdown_report(self, since_date, until_date):
+    def _generate_markdown_report(self):
         """Generate markdown format report."""
-        if since_date is None:
-            since_date = datetime.now() - timedelta(days=30)
-        if until_date is None:
-            until_date = datetime.now()
-        
         lines = []
         
         # Header
         lines.append(f"# {self.t('title')}")
         lines.append("")
-        lines.append(f"**{self.t('period')}:** {since_date.strftime('%Y-%m-%d')} → {until_date.strftime('%Y-%m-%d')}")
+        lines.append(f"**{self.t('period')}:** {self._format_date_range()}")
         lines.append(f"**{self.t('generated_at')}:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         lines.append("")
         
@@ -311,12 +326,9 @@ class ActivityReportGenerator:
         lines.append(f"## {self.t('summary')}")
         lines.append("")
         
-        total_additions = sum(f['additions'] for f in self.file_changes.values())
-        total_deletions = sum(f['deletions'] for f in self.file_changes.values())
-        
         lines.append(f"- **{self.t('total_commits')}:** {len(self.commits)}")
-        lines.append(f"- **{self.t('total_additions')}:** {total_additions:,}")
-        lines.append(f"- **{self.t('total_deletions')}:** {total_deletions:,}")
+        lines.append(f"- **{self.t('total_additions')}:** {self.total_additions:,}")
+        lines.append(f"- **{self.t('total_deletions')}:** {self.total_deletions:,}")
         lines.append(f"- **{self.t('files_changed')}:** {len(self.file_changes)}")
         lines.append(f"- **{self.t('authors')}:** {len(self.authors)}")
         lines.append("")
