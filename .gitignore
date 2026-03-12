@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Temp files
+# Temp / preview files
 *.tmp
 ppt_preview.*
+preview_final.*
