@@ -1,0 +1,9 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Temp / preview files
+*.tmp
+ppt_preview.*
+preview_final.*
