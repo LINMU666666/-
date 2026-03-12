@@ -1,0 +1,29 @@
+{
+  // 修复 GitHub Copilot 聊天输入框中文字符重叠问题
+  // Fix Chinese character overlap in GitHub Copilot chat input
+  "editor.fontFamily": "'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', Consolas, 'Courier New', monospace",
+  "editor.fontSize": 14,
+  "editor.lineHeight": 1.6,
+  "editor.fontLigatures": false,
+
+  // 聊天视图字体设置 / Chat view font settings
+  "chat.editor.fontSize": 14,
+  "chat.editor.lineHeight": 1.6,
+  "chat.editor.fontFamily": "'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', Consolas, 'Courier New', monospace",
+
+  // 终端字体设置（同样支持中文）/ Terminal font settings (also supports Chinese)
+  "terminal.integrated.fontFamily": "'Microsoft YaHei', 'MesloLGS NF', monospace",
+  "terminal.integrated.fontSize": 14,
+
+  // 确保工作区编码为 UTF-8 / Ensure workspace encoding is UTF-8
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": false,
+
+  // 渲染控制 / Rendering control
+  "editor.renderWhitespace": "none",
+  "editor.renderControlCharacters": false,
+
+  // GitHub Copilot 设置 / GitHub Copilot settings
+  "github.copilot.chat.localeOverride": "zh-CN",
+  "github.copilot.editor.enableAutoCompletions": true
+}
