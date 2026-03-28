@@ -16,6 +16,7 @@ import json
 import os
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlencode
 
 try:
     import requests
@@ -27,8 +28,6 @@ try:
 except ModuleNotFoundError as exc:  # pragma: no cover - import guard
     raise SystemExit("Missing dependency: websockets. Install with `pip install websockets`.") from exc
 
-from urllib.parse import urlencode
-
 API_BASE = "https://api.speedai.vip"
 WS_BASE = "wss://api.speedai.vip"
 AISURVEY_WS_BASE = "wss://api3.speedai.chat"
@@ -36,6 +35,11 @@ AISURVEY_WS_BASE = "wss://api3.speedai.chat"
 
 class SpeedAIError(RuntimeError):
     pass
+
+
+def _bi(en: str, cn: str) -> str:
+    """Format bilingual message consistently: English first, Chinese in parentheses."""
+    return f"{en} ({cn})"
 
 
 def _post_json(url: str, payload: dict, *, timeout: int = 30) -> dict:
@@ -55,7 +59,7 @@ def _post_json(url: str, payload: dict, *, timeout: int = 30) -> dict:
 
 def download_file(*, user_doc_id: str, file_name: str) -> Path:
     if not user_doc_id:
-        raise ValueError("user_doc_id 不能为空")
+        raise ValueError(_bi("user_doc_id cannot be empty", "user_doc_id 不能为空"))
 
     url = f"{API_BASE}/v1/download"
     resp = requests.post(url, json={"user_doc_id": user_doc_id, "file_name": file_name}, timeout=60)
@@ -73,6 +77,29 @@ def rewrite_text(*, apikey: str, text: str, lang: str, rewrite_type: str) -> str
     if data.get("code") != 200:
         raise SpeedAIError(f"Rewrite failed: {data}")
     return data["rewrite"]
+
+
+# Backwards-compatible boolean flag helper for Python 3.8/3.9
+def _add_bool_arg(parser: argparse.ArgumentParser, flag: str, *, default: bool, help: str) -> None:
+    dest = flag.lstrip("-").replace("-", "_")
+    if hasattr(argparse, "BooleanOptionalAction"):
+        parser.add_argument(flag, action=argparse.BooleanOptionalAction, default=default, help=help)
+    else:
+        parser.add_argument(
+            flag,
+            dest=dest,
+            action="store_const",
+            const=True,
+            default=default,
+            help=f"Enable: {help}",
+        )
+        parser.add_argument(
+            f"--no-{dest.replace('_', '-')}",
+            dest=dest,
+            action="store_const",
+            const=False,
+            help=f"Disable: {help}",
+        )
 
 
 def deai_text(*, apikey: str, text: str, lang: str, deai_type: str) -> str:
@@ -138,7 +165,7 @@ async def subscribe_docx_progress(*, token: str, doc_id: str, base_ws: str = AIS
     token = (token or "").strip()
     doc_id = (doc_id or "").strip()
     if not token or not doc_id:
-        raise ValueError("token 和 doc_id 必填")
+        raise ValueError(_bi("token and doc_id are required", "token 和 doc_id 必填"))
 
     query = urlencode({"token": token, "doc_id": doc_id, "snapshot_chunk_size": 50})
     ws_url = f"{base_ws.rstrip('/')}/v1/docx/progress?{query}"
@@ -175,7 +202,7 @@ async def subscribe_docx_progress(*, token: str, doc_id: str, base_ws: str = AIS
                 break
 
             if t == "completed":
-                print("[completed] 处理完成，可以调用 /v1/download 下载")
+                print(_bi("[completed] Processing completed, use /v1/download to fetch", "[completed] 处理完成，可以调用 /v1/download 下载"))
                 break
 
             if t == "error":
@@ -198,8 +225,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rewrite-text", default=default_text)
     parser.add_argument("--deai-text", default=default_text)
     parser.add_argument("--download-name", default="修改后论文")
-    parser.add_argument("--changed-only", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--skip-english", action=argparse.BooleanOptionalAction, default=False)
+    _add_bool_arg(parser, "--changed-only", default=True, help="Only return changed text")
+    _add_bool_arg(parser, "--skip-english", default=False, help="Skip processing English text")
     parser.add_argument("--subscribe-token", default="")
     return parser.parse_args()
 
@@ -244,4 +271,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (SpeedAIError, FileNotFoundError) as exc:
+        raise SystemExit(_bi(f"[SpeedAI] {exc}", "[SpeedAI] 发生错误，请检查输入或网络设置")) from exc
