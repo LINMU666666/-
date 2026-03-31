@@ -129,10 +129,32 @@ export PATH="$PWD/node_modules/.bin:$PATH"
    ```bash
    cat ~/.openclaw/openclaw.json
    ```
-   确保 `clientId / clientSecret / robotCode / corpId` 不是占位符。
+   确保 `clientId / clientSecret / robotCode / corpId` 不是占位符。示例结构如下：
+   ```json
+   {
+     "client": {
+       "channels": {
+         "dingtalk": {
+           "enabled": true,
+           "clientId": "YOUR_CLIENT_ID",
+           "clientSecret": "YOUR_CLIENT_SECRET",
+           "robotCode": "YOUR_ROBOT_CODE",
+           "corpId": "YOUR_CORP_ID",
+           "dmPolicy": "open",
+           "groupPolicy": "open",
+           "messageType": "markdown"
+         }
+       }
+     }
+   }
+   ```
 2. 修改配置后重启 OpenClaw。
 3. 确保服务器对外可访问（推荐 HTTPS + 443），并放行防火墙端口。
 4. 可先用健康检查验证服务已启动：
    ```bash
+   # OpenClaw 常见端口为 3000，按你的配置调整
    curl http://localhost:3000/health
+
+   # 若检查 DingTalk 机器人服务（本仓库 dingtalk_bot.py），默认端口为 8080
+   curl http://localhost:8080/health
    ```
