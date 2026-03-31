@@ -77,3 +77,62 @@ https://your-domain.com/dingtalk/callback
 python -m pytest test_dingtalk_bot.py -v
 ```
 
+---
+
+# OpenClaw + 钉钉部署排查（常见报错）
+
+下列步骤针对截图中常见的两类错误：`cat: command not found`、`openclaw: command not found`。
+
+## 1) `cat: command not found`
+
+1. 先确认系统是否缺少基础工具：
+   ```bash
+   command -v cat
+   ```
+2. 如果没有输出，说明系统裁剪过，请安装基础工具：
+   ```bash
+   sudo apt-get update && sudo apt-get install -y coreutils
+   ```
+
+> 若脚本来自 Windows 环境，建议先转换行尾：
+> ```bash
+> sudo apt-get install -y dos2unix
+> dos2unix ~/openclaw-dingtalk-setup.sh
+> ```
+
+## 2) `openclaw: command not found`
+
+`openclaw` 并不是系统自带命令。请在 OpenClaw 项目目录内通过 Node 启动：
+
+```bash
+cd ~/OpenClaw
+pnpm install
+pnpm run build
+pnpm start
+```
+
+或直接运行：
+
+```bash
+node scripts/run-node.mjs
+```
+
+如果你必须使用 CLI 形式（例如 `openclaw status`），请确保：
+
+```bash
+export PATH="$PWD/node_modules/.bin:$PATH"
+```
+
+## 3) 钉钉机器人不回消息
+
+1. 检查配置文件是否已写入真实值：
+   ```bash
+   cat ~/.openclaw/openclaw.json
+   ```
+   确保 `clientId / clientSecret / robotCode / corpId` 不是占位符。
+2. 修改配置后重启 OpenClaw。
+3. 确保服务器对外可访问（推荐 HTTPS + 443），并放行防火墙端口。
+4. 可先用健康检查验证服务已启动：
+   ```bash
+   curl http://localhost:3000/health
+   ```
