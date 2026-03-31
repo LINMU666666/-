@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import re
+import time
 from urllib.parse import urlparse
 
 import requests
@@ -45,6 +46,10 @@ logger = logging.getLogger(__name__)
 
 DINGTALK_APP_SECRET: str = os.getenv("DINGTALK_APP_SECRET", "")
 SPEEDAI_API_KEY: str = os.getenv("SPEEDAI_API_KEY", "")
+
+# Maximum age (in seconds) accepted for a DingTalk request timestamp.
+# DingTalk's own requirement is 60 minutes; we match that here.
+_SIGNATURE_MAX_AGE_SECONDS: int = 3600
 
 # Allowed hostnames for outbound DingTalk sessionWebhook calls (SSRF guard).
 _ALLOWED_WEBHOOK_HOSTS: frozenset[str] = frozenset(
@@ -90,9 +95,23 @@ def verify_dingtalk_signature(timestamp: str, sign: str) -> bool:
     DingTalk passes 'timestamp' and 'sign' as HTTP headers.
     The signature is: base64(HMAC-SHA256(timestamp + "\\n" + app_secret)).
     Signature verification is skipped when DINGTALK_APP_SECRET is not set.
+
+    Also rejects timestamps that are older than ``_SIGNATURE_MAX_AGE_SECONDS``
+    (default: 3600 s / 60 min) to prevent replay attacks.
     """
     if not DINGTALK_APP_SECRET:
         return True  # verification disabled in development
+
+    # Reject missing or non-numeric timestamps.
+    try:
+        ts_ms = int(timestamp)
+    except (ValueError, TypeError):
+        return False
+
+    # Reject requests whose timestamp is outside the allowed window.
+    now_ms = int(time.time() * 1000)
+    if abs(now_ms - ts_ms) > _SIGNATURE_MAX_AGE_SECONDS * 1000:
+        return False
 
     string_to_sign = f"{timestamp}\n{DINGTALK_APP_SECRET}"
     computed = hmac.new(
@@ -310,7 +329,18 @@ def dingtalk_callback():
     timestamp = request.headers.get("timestamp", "")
     sign = request.headers.get("sign", "")
 
-    if timestamp and sign and not verify_dingtalk_signature(timestamp, sign):
+    # When a secret is configured every inbound request must carry both headers
+    # and pass HMAC verification.  Requests without headers must also be rejected
+    # so an attacker cannot bypass verification simply by omitting the headers.
+    if DINGTALK_APP_SECRET:
+        if not timestamp or not sign:
+            logger.warning("Missing DingTalk signature headers from %s", request.remote_addr)
+            return jsonify({"errcode": 401, "errmsg": "Invalid signature"}), 401
+        if not verify_dingtalk_signature(timestamp, sign):
+            logger.warning("Invalid DingTalk signature from %s", request.remote_addr)
+            return jsonify({"errcode": 401, "errmsg": "Invalid signature"}), 401
+    elif timestamp and sign and not verify_dingtalk_signature(timestamp, sign):
+        # Secret not configured but headers present: still validate if provided.
         logger.warning("Invalid DingTalk signature from %s", request.remote_addr)
         return jsonify({"errcode": 401, "errmsg": "Invalid signature"}), 401
 

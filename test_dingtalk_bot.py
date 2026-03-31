@@ -9,6 +9,7 @@ import importlib
 import json
 import os
 import sys
+import time
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -38,6 +39,11 @@ def _make_sign(secret: str, timestamp: str) -> str:
     return base64.b64encode(digest).decode("utf-8")
 
 
+def _current_ts_ms() -> str:
+    """Return the current epoch time in milliseconds as a string."""
+    return str(int(time.time() * 1000))
+
+
 # ---------------------------------------------------------------------------
 # Signature verification tests
 # ---------------------------------------------------------------------------
@@ -53,24 +59,44 @@ class TestVerifySignature(unittest.TestCase):
         dingtalk_bot.DINGTALK_APP_SECRET = self._orig_secret
 
     def test_valid_signature(self):
-        ts = "1700000000000"
+        ts = _current_ts_ms()
         sign = _make_sign("test_secret_key", ts)
         self.assertTrue(dingtalk_bot.verify_dingtalk_signature(ts, sign))
 
     def test_invalid_signature(self):
-        ts = "1700000000000"
+        ts = _current_ts_ms()
         self.assertFalse(
             dingtalk_bot.verify_dingtalk_signature(ts, "badsignature==")
         )
 
     def test_wrong_timestamp(self):
-        ts = "1700000000000"
-        sign = _make_sign("test_secret_key", "9999999999999")
+        ts = _current_ts_ms()
+        # Sign was computed for a *different* timestamp → should fail.
+        other_ts = str(int(ts) + 60_000)
+        sign = _make_sign("test_secret_key", other_ts)
         self.assertFalse(dingtalk_bot.verify_dingtalk_signature(ts, sign))
 
     def test_no_secret_always_passes(self):
         dingtalk_bot.DINGTALK_APP_SECRET = ""
         self.assertTrue(dingtalk_bot.verify_dingtalk_signature("ts", "anysign"))
+
+    def test_expired_timestamp_rejected(self):
+        """Timestamps older than 60 minutes must be rejected (replay protection)."""
+        old_ts = str((int(time.time()) - (dingtalk_bot._SIGNATURE_MAX_AGE_SECONDS + 60)) * 1000)
+        sign = _make_sign("test_secret_key", old_ts)
+        self.assertFalse(dingtalk_bot.verify_dingtalk_signature(old_ts, sign))
+
+    def test_future_timestamp_outside_window_rejected(self):
+        """Far-future timestamps (clock skew > 60 min) are also rejected."""
+        future_ts = str((int(time.time()) + (dingtalk_bot._SIGNATURE_MAX_AGE_SECONDS + 60)) * 1000)
+        sign = _make_sign("test_secret_key", future_ts)
+        self.assertFalse(dingtalk_bot.verify_dingtalk_signature(future_ts, sign))
+
+    def test_empty_timestamp_rejected(self):
+        self.assertFalse(dingtalk_bot.verify_dingtalk_signature("", "anysign"))
+
+    def test_non_numeric_timestamp_rejected(self):
+        self.assertFalse(dingtalk_bot.verify_dingtalk_signature("not-a-number", "anysign"))
 
 
 # ---------------------------------------------------------------------------
@@ -320,18 +346,19 @@ class TestDingTalkCallbackEndpoint(unittest.TestCase):
             "text": {"content": "帮助"},
             "sessionWebhook": "",
         }
+        ts = _current_ts_ms()
         resp = self.client.post(
             "/dingtalk/callback",
             data=json.dumps(payload),
             content_type="application/json",
-            headers={"timestamp": "1234567890000", "sign": "badsign"},
+            headers={"timestamp": ts, "sign": "badsign"},
         )
         self.assertEqual(resp.status_code, 401)
 
     def test_valid_signature_accepted(self):
         secret = "my_test_secret"
         dingtalk_bot.DINGTALK_APP_SECRET = secret
-        ts = "1700000000000"
+        ts = _current_ts_ms()
         sign = _make_sign(secret, ts)
         payload = {
             "msgtype": "text",
@@ -344,6 +371,38 @@ class TestDingTalkCallbackEndpoint(unittest.TestCase):
                 data=json.dumps(payload),
                 content_type="application/json",
                 headers={"timestamp": ts, "sign": sign},
+            )
+        self.assertEqual(resp.status_code, 200)
+
+    def test_missing_headers_rejected_when_secret_set(self):
+        """Requests without signature headers must be rejected when secret is configured."""
+        dingtalk_bot.DINGTALK_APP_SECRET = "real_secret"
+        payload = {
+            "msgtype": "text",
+            "text": {"content": "帮助"},
+            "sessionWebhook": "",
+        }
+        resp = self.client.post(
+            "/dingtalk/callback",
+            data=json.dumps(payload),
+            content_type="application/json",
+            # No timestamp / sign headers
+        )
+        self.assertEqual(resp.status_code, 401)
+
+    def test_no_headers_no_secret_accepted(self):
+        """Without a configured secret, headerless requests are accepted (dev mode)."""
+        dingtalk_bot.DINGTALK_APP_SECRET = ""
+        payload = {
+            "msgtype": "text",
+            "text": {"content": "帮助"},
+            "sessionWebhook": "",
+        }
+        with patch.object(dingtalk_bot, "send_dingtalk_reply", return_value=True):
+            resp = self.client.post(
+                "/dingtalk/callback",
+                data=json.dumps(payload),
+                content_type="application/json",
             )
         self.assertEqual(resp.status_code, 200)
 

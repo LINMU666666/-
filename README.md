@@ -158,3 +158,29 @@ export PATH="$PWD/node_modules/.bin:$PATH"
    # 若检查 DingTalk 机器人服务（本仓库 dingtalk_bot.py），默认端口为 8080
    curl http://localhost:8080/health
    ```
+
+## 4) 收到 401 Invalid signature（签名验证失败）
+
+钉钉机器人每条消息都会携带 `timestamp` 和 `sign` 请求头。常见失败原因：
+
+| 原因 | 解决方法 |
+|------|---------|
+| `DINGTALK_APP_SECRET` 填错或未配置 | 核对开放平台机器人配置页面的 **AppSecret** |
+| 服务器时钟偏差超过 60 分钟 | 执行 `sudo ntpdate -u pool.ntp.org` 同步时间 |
+| 请求通过反向代理被剥离了请求头 | nginx 需 `proxy_pass_request_headers on;` 并透传 `timestamp` / `sign` 头 |
+| 签名过期（重放攻击保护） | 消息时间戳超过 60 分钟会被拒绝，属正常行为 |
+
+验证方式（手动模拟 DingTalk 请求）：
+
+```bash
+SECRET="your_app_secret"
+TS=$(date +%s%3N)        # 毫秒时间戳
+SIGN=$(printf "%s\n%s" "$TS" "$SECRET" | openssl dgst -sha256 -hmac "$SECRET" -binary | base64)
+curl -X POST http://localhost:8080/dingtalk/callback \
+  -H "Content-Type: application/json" \
+  -H "timestamp: $TS" \
+  -H "sign: $SIGN" \
+  -d '{"msgtype":"text","text":{"content":"帮助"},"senderNick":"test","sessionWebhook":""}'
+```
+
+预期返回：`{"errcode": 0, "errmsg": "ok"}`
