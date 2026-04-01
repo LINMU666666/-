@@ -219,4 +219,17 @@ ProxyError('Unable to connect to proxy', SSLError(8, 'EOF occurred in violation 
    proxies = {"http": "http://proxy.host:8080", "https": "http://proxy.host:8080"}
    requests.get(url, headers=HEADERS, timeout=(5, 10), proxies=proxies, verify="/path/to/cacert.pem")
    ```
-   请使用企业 CA 证书而不是关闭 TLS 校验。
+请使用企业 CA 证书而不是关闭 TLS 校验。
+
+如果需要一份可直接运行、带代理开关的示例代码，请使用新增脚本：
+
+```bash
+# 默认遵循系统代理
+python3 crawler_example.py https://example.com
+
+# 忽略系统代理
+python3 crawler_example.py https://example.com --no-proxy
+
+# 使用公司代理 + 指定 CA 证书
+python3 crawler_example.py https://intranet --proxy http://proxy.host:8080 --verify-cert /path/to/cacert.pem
+```
