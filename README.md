@@ -194,3 +194,29 @@ curl -X POST http://localhost:8080/dingtalk/callback \
 ```
 
 预期返回：`{"errcode": 0, "errmsg": "ok"}`
+
+## 5) Requests 抓取类脚本出现 ProxyError / SSLEOFError
+
+如果你按示例爬虫运行时看到类似：
+
+```
+ProxyError('Unable to connect to proxy', SSLError(8, 'EOF occurred in violation of protocol (_ssl.c:1129)'))
+```
+
+常见原因与修复：
+
+1. **占位域名**：确认已把 `https://example-forum.com` 改成真实可访问的目标站点。
+2. **系统代理失效**：`requests` 默认读取环境变量 `HTTP(S)_PROXY`。若代理不可达会直接报上述错误。可以临时禁用：
+   ```python
+   requests.get(url, headers=HEADERS, timeout=(5, 10), proxies={"http": None, "https": None})
+   ```
+   或在终端清理环境变量：
+   ```bash
+   unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY
+   ```
+3. **需要公司代理**：若必须走代理，请写入正确的代理地址，例如：
+   ```python
+   proxies = {"http": "http://proxy.host:8080", "https": "http://proxy.host:8080"}
+   requests.get(url, headers=HEADERS, timeout=(5, 10), proxies=proxies, verify="/path/to/cacert.pem")
+   ```
+   请使用企业 CA 证书而不是关闭 TLS 校验。
