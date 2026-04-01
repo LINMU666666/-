@@ -1,11 +1,21 @@
 # SpeedAI 示例
 
 运行准备：
-1. 安装依赖：`pip install -r requirements.txt`
+1. 安装依赖（推荐使用 python3 -m pip，避免缺少 pip 命令）：
+   ```bash
+   python3 -m pip install -r requirements.txt
+   ```
+   如果系统提示 `pip: command not found`，请先安装：
+   ```bash
+   # Debian/Ubuntu
+   sudo apt-get update && sudo apt-get install -y python3-pip
+   # CentOS/RHEL
+   sudo yum install -y python3-pip
+   ```
 2. 将 `.docx` 放在仓库根目录（默认文件名 `文本.docx`），或用 `--file` 指定路径
 3. 运行脚本：
    ```bash
-   python speedai_client.py --apikey YOUR_API_KEY --mode deai --type weipu
+   python3 speedai_client.py --apikey YOUR_API_KEY --mode deai --type weipu
    ```
    可选：订阅进度 `--subscribe-token YOUR_TOKEN`
 
@@ -22,7 +32,7 @@
 ### 1. 安装依赖
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ### 2. 配置环境变量
@@ -42,7 +52,7 @@ export PORT=8080
 ### 3. 启动服务
 
 ```bash
-python dingtalk_bot.py
+python3 dingtalk_bot.py
 ```
 
 服务启动后，在公网可访问的地址（如通过 nginx 反代）注册 Webhook 回调 URL：
@@ -74,7 +84,7 @@ https://your-domain.com/dingtalk/callback
 ## 运行测试
 
 ```bash
-python -m pytest test_dingtalk_bot.py -v
+python3 -m pytest test_dingtalk_bot.py -v
 ```
 
 ---
