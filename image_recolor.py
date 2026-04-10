@@ -63,7 +63,7 @@ def _load_local_image(path: Path) -> Image.Image:
     return Image.open(path).convert("RGB")
 
 
-def _hue_shifts(count: int) -> Iterable[int]:
+def _hue_shifts(count: int) -> list[int]:
     if count <= 0:
         raise ValueError("Variant count must be positive.")
     step = 256 // (count + 1)
