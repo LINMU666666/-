@@ -13,6 +13,17 @@
 
 ---
 
+## 🎨 图像换色脚本
+
+生成同一图片的不同颜色版本，并循环验证输出：
+
+```bash
+python image_recolor.py --url https://github.com/user-attachments/assets/a0fd8357-be7a-4915-96da-a05d1570d7ac
+# 可选：python image_recolor.py --input /absolute/path/to/image.png --variants 6 --output-dir recolor_outputs
+```
+
+---
+
 ## 📱 DingTalk 钉钉机器人集成
 
 ### 配置
