@@ -66,8 +66,10 @@ def _load_local_image(path: Path) -> Image.Image:
 def _hue_shifts(count: int) -> Iterable[int]:
     if count <= 0:
         raise ValueError("Variant count must be positive.")
-    step = 256 / (count + 1)
-    return [int(step * (idx + 1)) for idx in range(count)]
+    step = 256 // (count + 1)
+    if step == 0:
+        raise ValueError("Variant count too large for hue shifting.")
+    return [step * (idx + 1) for idx in range(count)]
 
 
 def _shift_hue(image: Image.Image, shift: int) -> Image.Image:
