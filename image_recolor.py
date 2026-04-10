@@ -25,6 +25,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - import guard
     raise SystemExit("Missing dependency: Pillow. Install with `pip install Pillow`.") from exc
 
 DEFAULT_IMAGE_URL = "https://github.com/user-attachments/assets/a0fd8357-be7a-4915-96da-a05d1570d7ac"
+HUE_RANGE = 256
 
 
 def _add_bool_arg(parser: argparse.ArgumentParser, flag: str, *, default: bool, help: str) -> None:
@@ -66,17 +67,17 @@ def _load_local_image(path: Path) -> Image.Image:
 def _hue_shifts(count: int) -> list[int]:
     if count <= 0:
         raise ValueError("Variant count must be positive.")
-    step = 256 // (count + 1)
+    step = HUE_RANGE // (count + 1)
     if step == 0:
         raise ValueError("Variant count too large for hue shifting.")
     return [step * (idx + 1) for idx in range(count)]
 
 
 def _shift_hue(image: Image.Image, shift: int) -> Image.Image:
-    shift = shift % 256
+    shift = shift % HUE_RANGE
     hsv = image.convert("HSV")
     h, s, v = hsv.split()
-    h = h.point(lambda p: (p + shift) % 256)
+    h = h.point(lambda p: (p + shift) % HUE_RANGE)
     return Image.merge("HSV", (h, s, v)).convert("RGB")
 
 
