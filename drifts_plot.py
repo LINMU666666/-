@@ -76,7 +76,7 @@ def read_data_file(file_path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:
         try:
             df = pd.read_csv(file_path, sep=None, engine="python")
         except Exception:
-            df = pd.read_csv(file_path, delim_whitespace=True, engine="python")
+            df = pd.read_csv(file_path, sep=r"\s+", engine="python")
     elif ext in {".xlsx", ".xls"}:
         df = pd.read_excel(file_path)
     else:
