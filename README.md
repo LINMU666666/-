@@ -24,6 +24,17 @@ python image_recolor.py --url https://github.com/user-attachments/assets/a0fd835
 
 ---
 
+## 📈 DRIFTS 绘图脚本
+
+生成接近参考图风格的 DRIFTS 曲线，并循环验证输出：
+
+```bash
+python drifts_plot.py --file drifts_data.csv
+# 可选：python drifts_plot.py --input-dir ./data --pattern "*.csv" --output-dir drifts_outputs
+```
+
+---
+
 ## 📱 DingTalk 钉钉机器人集成
 
 ### 配置
