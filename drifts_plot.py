@@ -38,6 +38,10 @@ plt.rcParams.update({
 })
 
 
+def _bi(en: str, cn: str) -> str:
+    return f"{en} ({cn})"
+
+
 def _add_bool_arg(parser: argparse.ArgumentParser, flag: str, *, default: bool, help: str) -> None:
     dest = flag.lstrip("-").replace("-", "_")
     if hasattr(argparse, "BooleanOptionalAction"):
@@ -76,7 +80,7 @@ def read_data_file(file_path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:
     elif ext in {".xlsx", ".xls"}:
         df = pd.read_excel(file_path)
     else:
-        raise ValueError(f"不支持的文件格式: {ext}")
+        raise ValueError(_bi(f"Unsupported file type: {ext}", f"不支持的文件格式: {ext}"))
 
     df = df.dropna()
     x = df.iloc[:, 0].astype(float).to_numpy()
@@ -193,9 +197,12 @@ def _plot_drifts(
     plt.savefig(tif_path, dpi=max(dpi, 600), bbox_inches="tight")
     plt.close(fig)
 
-    print(f"✅ DRIFTS图已保存: {png_path} / {tif_path}")
+    print(_bi(f"✅ DRIFTS saved: {png_path} / {tif_path}", f"✅ DRIFTS图已保存: {png_path} / {tif_path}"))
     if show_peaks and len(peaks) > 0:
-        print(f"识别到峰位: {[round(x_plot[p], 2) for p in peaks]}")
+        print(_bi(
+            f"Detected peaks: {[round(x_plot[p], 2) for p in peaks]}",
+            f"识别到峰位: {[round(x_plot[p], 2) for p in peaks]}",
+        ))
     return [png_path, tif_path]
 
 
@@ -215,7 +222,10 @@ def _collect_files(
         collected.extend(sorted(input_dir.glob(pattern)))
     unique = sorted({path.resolve() for path in collected})
     if not unique:
-        raise ValueError("请提供 --file / --files 或 --input-dir + --pattern")
+        raise ValueError(_bi(
+            "Please provide --file / --files or --input-dir + --pattern",
+            "请提供 --file / --files 或 --input-dir + --pattern",
+        ))
     return unique
 
 
@@ -273,7 +283,7 @@ def main() -> None:
         )
 
     _verify_outputs(outputs)
-    print("✅ 已完成循环验证，所有输出文件有效。")
+    print(_bi("✅ Loop verification completed. All outputs are valid.", "✅ 已完成循环验证，所有输出文件有效。"))
 
 
 if __name__ == "__main__":
