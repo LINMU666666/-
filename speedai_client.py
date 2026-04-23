@@ -231,6 +231,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _notify_dingtalk(message: str) -> None:
+    """Send *message* to DingTalk if DINGTALK_WEBHOOK_URL is configured."""
+    webhook_url = os.getenv("DINGTALK_WEBHOOK_URL", "").strip()
+    if not webhook_url:
+        return
+    try:
+        from dingtalk_bot import DingTalkBot  # local import keeps dependency optional
+        DingTalkBot().send_text(message)
+        print("[dingtalk] Notification sent.")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[dingtalk] Failed to send notification: {exc}")
+
+
 def main() -> None:
     args = parse_args()
     if not args.apikey:
@@ -268,6 +281,11 @@ def main() -> None:
     # 5) optional progress subscription
     if args.subscribe_token:
         asyncio.run(subscribe_docx_progress(token=args.subscribe_token, doc_id=user_doc_id))
+
+    # 6) optional DingTalk notification on completion
+    _notify_dingtalk(
+        f"✅ SpeedAI 处理完成\n文件: {file_path.name}\n下载 ID: {user_doc_id}"
+    )
 
 
 if __name__ == "__main__":
